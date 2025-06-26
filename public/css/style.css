@@ -1,0 +1,161 @@
+/* public/css/style.css */
+body {
+    font-family: 'Montserrat', sans-serif;
+    background-color: #1a1a1a;
+    color: #f5f5f5;
+}
+h1, h2, h3, h4, h5, h6 { font-weight: 700; }
+.btn-brand {
+    background-color: #A020F0; border-color: #A020F0; color: #fff;
+    font-weight: 600; padding: 12px 30px; border-radius: 30px; transition: all 0.3s ease;
+}
+.btn-brand:hover {
+    background-color: #8A2BE2; border-color: #8A2BE2; transform: translateY(-3px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+.navbar {
+    background-color: rgba(18, 18, 18, 0.8) !important;
+    backdrop-filter: blur(10px); padding: 1rem 0;
+}
+.navbar-brand { font-weight: 700; font-size: 1.5rem; }
+.nav-link { font-weight: 500; color: #f5f5f5 !important; margin: 0 10px; }
+.nav-link:hover { color: #A020F0 !important; }
+#hero {
+    background: linear-gradient(rgba(18, 18, 18, 0.7), rgba(18, 18, 18, 0.9)), url('https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=1920') no-repeat center center;
+    background-size: cover; min-height: 100vh; display: flex;
+    align-items: center; justify-content: center; text-align: center;
+}
+.navbar-text {
+    cursor: default;
+}
+#hero h1 { font-size: 4rem; font-weight: 900; text-shadow: 2px 2px 10px rgba(0,0,0,0.5); }
+#hero p { font-size: 1.5rem; font-weight: 300; }
+footer { background-color: #121212; padding: 40px 0; text-align: center; }
+.social-icons a { color: #f5f5f5; font-size: 1.5rem; margin: 0 15px; transition: color 0.3s ease; }
+.social-icons a:hover { color: #A020F0; }
+.form-container {
+    background-color: #2a2a2a; padding: 40px; border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+.form-container .form-control { background-color: #333; border-color: #444; color: #f5f5f5; }
+.form-container .form-control:focus {
+    background-color: #333; border-color: #A020F0; color: #f5f5f5;
+    box-shadow: 0 0 0 0.25rem rgba(160, 32, 240, 0.25);
+}
+#admin-sidebar { background-color: #2a2a2a; min-height: 100vh; }
+#admin-sidebar .nav-link { color: #f5f5f5 !important; border-left: 3px solid transparent; }
+#admin-sidebar .nav-link:hover, #admin-sidebar .nav-link.active {
+    background-color: #333; border-left: 3px solid #A020F0;
+}
+.status-pendente { background-color: #ffc107; color: #000; padding: 5px 10px; border-radius: 15px; font-size: 0.8rem; font-weight: 600; }
+.status-aceito { background-color: #198754; color: #fff; padding: 5px 10px; border-radius: 15px; font-size: 0.8rem; font-weight: 600; }
+.status-rejeitado { background-color: #dc3545; color: #fff; padding: 5px 10px; border-radius: 15px; font-size: 0.8rem; font-weight: 600; }
+.select-status { border-width: 2px; font-weight: 600; }
+.status-select-pendente { border-color: #ffc107 !important; color: #ffc107 !important; }
+.status-select-concluido { border-color: #198754 !important; color: #198754 !important; }
+.status-select-rejeitado { border-color: #dc3545 !important; color: #dc3545 !important; }
+.status-select-cancelado { border-color: #dc3545 !important; color: #dc3545 !important; }
+
+/* Estilos para avaliação com estrelas */
+.star-rating i {
+    font-size: 2rem;
+    color: #6c757d;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+.star-rating i:hover,
+.star-rating i.selected {
+    color: #ffc107;
+}
+
+/* Estilos para o Modal de Avaliação e Texto Truncado no ADM */
+.truncate-text {
+    display: inline-block;
+    max-width: 450px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: bottom;
+}
+.view-full-review {
+    cursor: pointer;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+}
+#reviewModal .modal-body {
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+/* Contêiner para o campo de senha ter o ícone dentro dele */
+.password-container {
+    position: relative;
+}
+
+/* Estilo para o ícone do olho */
+.toggle-password {
+    position: absolute;
+    top: 50%;
+    right: 15px;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #6c757d;
+}
+
+/* Correção para o fundo branco do campo de data */
+input[type="date"] {
+    color-scheme: dark;
+}
+
+/* Garante que o ícone do calendário fique visível no tema escuro */
+input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.8);
+}
+
+/* --- NOVOS ESTILOS PARA A PÁGINA SOBRE --- */
+
+/* Cor roxa da marca para elementos de destaque */
+.text-brand {
+    color: #A020F0 !important;
+}
+
+#about-hero {
+    background: linear-gradient(rgba(18, 18, 18, 0.8), rgba(18, 18, 18, 1)), url('https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=1920') no-repeat center center;
+    background-size: cover;
+    padding: 10rem 0; /* Aumenta o espaçamento interno */
+}
+
+#bio p {
+    font-size: 1.1rem;
+    line-height: 1.8;
+}
+
+#vibe {
+    background-color: #121212; /* Cor de fundo um pouco diferente para destacar a seção */
+}
+
+.vibe-card {
+    background-color: #2a2a2a;
+    padding: 2.5rem;
+    border-radius: 10px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    height: 100%;
+}
+
+.vibe-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 10px 30px rgba(160, 32, 240, 0.2);
+}
+
+.award-card {
+    background-color: transparent;
+    padding: 1.5rem;
+    border: 1px solid #444;
+    border-radius: 10px;
+    height: 100%;
+}
+
+#cta-sobre {
+    background-color: #1f1f1f;
+}
