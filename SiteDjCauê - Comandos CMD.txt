@@ -1,3 +1,0 @@
-SiteDjCauê - Comandos "CMD"
-Abrir Servidor: npm start
-Fechar Servidor: ctrl + C
