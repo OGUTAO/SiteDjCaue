@@ -1,3 +1,11 @@
 SiteDjCauê - Comandos "CMD"
+
+instalar o node.js (Adicionar no PATH) / (Recomendo instalar todas as ferramentas)
+
+cd "Onde tiver o site"\SiteDjCaue
+exemplo:
+cd OneDrive\Documentos\SiteDjCaue
+
+
 Abrir Servidor: npm start
 Fechar Servidor: ctrl + C 

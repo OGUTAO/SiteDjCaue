@@ -113,7 +113,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     filter: invert(0.8);
 }
 
-/* --- NOVOS ESTILOS PARA A PÁGINA SOBRE --- */
 
 /* Cor roxa da marca para elementos de destaque */
 .text-brand {
@@ -158,4 +157,15 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 #cta-sobre {
     background-color: #1f1f1f;
+}
+
+/* Cor para o texto de ajuda no card de certificado */
+.aviso-clique {
+    color: #A020F0 !important; /* Cor roxa da marca */
+    transition: color 0.3s ease;
+}
+
+/* Opcional: faz o texto ficar um pouco mais claro ao passar o mouse */
+.award-card:hover .aviso-clique {
+    color: #c77dff !important; 
 }
