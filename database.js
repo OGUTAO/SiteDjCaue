@@ -10,18 +10,20 @@ const db = new sqlite3.Database('./database.db', (err) => {
         // Cria as tabelas se elas não existirem
         db.serialize(() => {
             db.run(`CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                email TEXT NOT NULL UNIQUE,
-                phone TEXT,
-                birth_date TEXT,
-                password TEXT,
-                google_id TEXT UNIQUE,
-                avatar_url TEXT,
-                role TEXT DEFAULT 'client'
-            )`, (err) => {
-                if (err) console.error("Erro ao criar tabela users", err.message);
-            });
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            email TEXT NOT NULL UNIQUE,
+            phone TEXT,
+            birth_date TEXT,
+            password TEXT,
+            google_id TEXT UNIQUE,
+            avatar_url TEXT,
+            role TEXT DEFAULT 'client',
+            reset_password_token TEXT,
+            reset_password_expires DATETIME
+        )`, (err) => {
+            if (err) console.error("Erro ao criar tabela users", err.message);
+        });
 
             db.run(`CREATE TABLE IF NOT EXISTS orcamentos (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,

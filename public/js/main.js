@@ -377,4 +377,64 @@ document.addEventListener('DOMContentLoaded', function () {
         loadAvaliacoes();
         avaliacoesTbody.addEventListener('click', async (event) => { const button = event.target; if (button.classList.contains('view-full-review')) { event.preventDefault(); const fullText = decodeURIComponent(button.dataset.fullText); const authorName = button.dataset.authorName; document.getElementById('reviewModalLabel').textContent = `Avaliação de ${authorName}`; document.getElementById('reviewModalBody').textContent = fullText; reviewModal.show(); return; } const reviewId = button.dataset.id; if (!reviewId) return; let url = ''; let method = ''; if (button.classList.contains('btn-approve')) { url = `/api/admin/avaliacoes/${reviewId}/approve`; method = 'PUT'; } else if (button.classList.contains('btn-reject')) { url = `/api/admin/avaliacoes/${reviewId}/reject`; method = 'PUT'; } else if (button.classList.contains('btn-delete')) { if (!confirm('Você deseja mesmo excluir esta avaliação?')) return; url = `/api/admin/avaliacoes/${reviewId}`; method = 'DELETE'; } else { return; } try { const response = await fetch(url, { method: method, headers: { 'Authorization': `Bearer ${token}` } }); const result = await response.json(); if (!response.ok) throw new Error(result.message); showAlert(result.message, 'success'); loadAvaliacoes(); } catch (error) { showAlert(error.message || "Ocorreu um erro."); } });
     }
+    const formEsqueciSenha = document.getElementById('formEsqueciSenha');
+    if (formEsqueciSenha) {
+        formEsqueciSenha.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const data = Object.fromEntries(new FormData(formEsqueciSenha).entries());
+            try {
+                const response = await fetch('/api/forgot-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.message);
+                showAlert(result.message, 'success');
+                formEsqueciSenha.reset();
+            } catch (error) {
+                showAlert(error.message || "Erro ao solicitar recuperação.");
+            }
+        });
+    }
+
+    // Lógica para o formulário de Redefinir a Senha
+    const formResetPassword = document.getElementById('formResetPassword');
+    if (formResetPassword) {
+        // Pega o token da URL e insere no formulário
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        if (token) {
+            document.getElementById('token').value = token;
+        } else {
+            showAlert('Token de recuperação não encontrado. Por favor, use o link do seu e-mail.', 'danger');
+        }
+        
+        formResetPassword.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const data = Object.fromEntries(new FormData(formResetPassword).entries());
+
+            if (data.password.length < 6) {
+                return showAlert('A senha precisa ter no mínimo 6 caracteres.', 'warning');
+            }
+            if (data.password !== data.confirmPassword) {
+                return showAlert('As senhas não coincidem!', 'warning');
+            }
+
+            try {
+                const response = await fetch('/api/reset-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: data.token, password: data.password })
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.message);
+                showAlert(result.message, 'success');
+                setTimeout(() => window.location.href = 'login.html', 2000);
+            } catch (error) {
+                showAlert(error.message || "Erro ao redefinir a senha.");
+            }
+        });
+    }
 });
+

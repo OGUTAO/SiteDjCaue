@@ -4,6 +4,8 @@ const path = require('path');
 const db = require('./database.js');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const nodemailer = require('nodemailer');
+const crypto = require('crypto');
 
 const app = express();
 const PORT = 3000;
@@ -233,6 +235,81 @@ app.delete('/api/admin/avaliacoes/:id', authenticateToken, isAdmin, (req, res) =
     db.run(sql, [id], function(err) {
         if (err) return res.status(500).json({ message: "Erro ao excluir avaliação." });
         res.json({ message: "Avaliação excluída com sucesso!" });
+    });
+});
+
+// ROTA PARA SOLICITAR A RECUPERAÇÃO DE SENHA
+app.post('/api/forgot-password', (req, res) => {
+    const { email } = req.body;
+    const sql = 'SELECT * FROM users WHERE email = ?';
+
+    db.get(sql, [email], (err, user) => {
+        if (!user) {
+            // Resposta genérica para não revelar se um e-mail está ou não cadastrado
+            return res.status(200).json({ message: "Se um usuário com este e-mail existir, um link de recuperação foi enviado." });
+        }
+
+        // 1. Gerar token seguro
+        const token = crypto.randomBytes(20).toString('hex');
+        const expires = new Date(Date.now() + 3600000); // Token válido por 1 hora
+
+        // 2. Salvar o token no banco de dados
+        const updateSql = 'UPDATE users SET reset_password_token = ?, reset_password_expires = ? WHERE email = ?';
+        db.run(updateSql, [token, expires, email], async (err) => {
+            if (err) {
+                return res.status(500).json({ message: "Erro ao salvar o token de recuperação." });
+            }
+
+            // 3. Configurar o Nodemailer para enviar o e-mail
+            const transporter = nodemailer.createTransport({
+                service: 'gmail',
+                auth: {
+                    user: process.env.EMAIL_USER,
+                    pass: process.env.EMAIL_PASS,
+                },
+            });
+
+            const mailOptions = {
+                to: user.email,
+                from: `DJ Cauê Faria <${process.env.EMAIL_USER}>`,
+                subject: 'Recuperação de Senha - DJ Cauê Faria',
+                text: `Você está recebendo este e-mail porque você (ou outra pessoa) solicitou a redefinição da senha da sua conta.\n\n` +
+                      `Por favor, clique no link a seguir ou cole-o em seu navegador para concluir o processo:\n\n` +
+                      `http://${req.headers.host}/reset-password.html?token=${token}\n\n` +
+                      `Se você não solicitou isso, ignore este e-mail e sua senha permanecerá inalterada.\n`,
+            };
+
+            // 4. Enviar o e-mail
+            try {
+                await transporter.sendMail(mailOptions);
+                res.json({ message: `Um e-mail de recuperação foi enviado para ${user.email}.` });
+            } catch (error) {
+                console.error('Erro ao enviar e-mail:', error);
+                res.status(500).json({ message: "Erro ao enviar o e-mail de recuperação." });
+            }
+        });
+    });
+});
+
+// ROTA PARA REDEFINIR A SENHA
+app.post('/api/reset-password', (req, res) => {
+    const { token, password } = req.body;
+
+    const sql = `SELECT * FROM users WHERE reset_password_token = ? AND reset_password_expires > ?`;
+    db.get(sql, [token, new Date()], (err, user) => {
+        if (!user) {
+            return res.status(400).json({ message: "Token de redefinição de senha inválido ou expirado." });
+        }
+
+        bcrypt.hash(password, 10, (err, hash) => {
+            if (err) return res.status(500).json({ message: "Erro ao processar a nova senha." });
+
+            const updateSql = `UPDATE users SET password = ?, reset_password_token = NULL, reset_password_expires = NULL WHERE id = ?`;
+            db.run(updateSql, [hash, user.id], (err) => {
+                if (err) return res.status(500).json({ message: "Erro ao atualizar a senha." });
+                res.json({ message: "Senha alterada com sucesso! Você já pode fazer o login." });
+            });
+        });
     });
 });
 
