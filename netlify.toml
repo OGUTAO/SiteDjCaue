@@ -1,0 +1,21 @@
+# Configurações de Build para a Netlify
+[build]
+  # O comando que a Netlify vai rodar para instalar suas dependências
+  command = "npm install"
+  
+  # A pasta que contém seu site estático (HTML, CSS, JS do front-end)
+  publish = "public"
+  
+  # A pasta onde vamos colocar nossas funções de API
+  functions = "netlify/functions"
+
+# Regra de "tradução" de URL. Esta é a parte mais importante!
+[[redirects]]
+  # Qualquer chamada que o seu front-end fizer para /api/...
+  from = "/api/*"
+  
+  # A Netlify vai redirecionar para a função correspondente
+  to = "/.netlify/functions/:splat"
+  
+  # Isso faz com que a regra funcione como uma API
+  status = 200
