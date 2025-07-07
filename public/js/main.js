@@ -39,19 +39,18 @@ document.addEventListener('DOMContentLoaded', function () {
         if (token) {
             let userName = 'Usuário';
             try {
-                // CORRIGIDO: Chamando a rota /api/me que busca os dados do usuário
                 const response = await fetch('/api/me', { headers: { 'Authorization': `Bearer ${token}` } });
                 if (response.ok) {
                     const userData = await response.json();
-                    userName = userData.name.split(' ')[0]; // Pega só o primeiro nome
+                    userName = userData.name.split(' ')[0];
                 } else {
-                    console.error('Token inválido ou sessão expirada, deslogando.');
+                    console.error('Token inválido, deslogando.');
                     localStorage.removeItem('token');
                     window.location.reload();
                     return;
                 }
             } catch (error) {
-                console.error('Erro de rede ao buscar dados do usuário, deslogando.', error);
+                console.error('Erro de rede, deslogando.', error);
                 localStorage.removeItem('token');
                 window.location.reload();
                 return;
@@ -68,17 +67,15 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     // =========================================================================
-    // INICIALIZAÇÃO E MANIPULADORES DE EVENTOS GERAIS
+    // INICIALIZAÇÃO GERAL E EVENTOS
     // =========================================================================
 
-    // Cobre as páginas que não carregam o navbar dinamicamente
     if (document.getElementById('navbar-links')) {
         atualizarNavbar();
     }
     
     const token = localStorage.getItem('token');
 
-    // Lógica para mostrar/esconder senha
     const setupPasswordToggle = () => {
         const togglePassword = document.getElementById('togglePassword');
         const passwordInput = document.getElementById('password');
@@ -93,7 +90,6 @@ document.addEventListener('DOMContentLoaded', function () {
     };
     setupPasswordToggle();
 
-    // Formulário de Login
     const formLogin = document.getElementById('formLogin');
     if (formLogin) {
         formLogin.addEventListener('submit', async (event) => {
@@ -103,47 +99,20 @@ document.addEventListener('DOMContentLoaded', function () {
                 const response = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.message);
-                
                 localStorage.setItem('token', result.token);
                 showAlert(result.message, 'success');
-                
-                if (result.role === 'admin') { 
-                    setTimeout(() => window.location.href = 'adm.html', 1000); 
-                } else { 
-                    setTimeout(() => window.location.href = 'index.html', 1000); 
-                }
+                if (result.role === 'admin') { setTimeout(() => window.location.href = 'adm.html', 1000); } 
+                else { setTimeout(() => window.location.href = 'index.html', 1000); }
             } catch (error) { showAlert(error.message || "Erro desconhecido.", 'danger'); }
         });
     }
-
-    // Formulário de Cadastro
-    const formCadastro = document.getElementById('formCadastro');
-    if (formCadastro) {
-        formCadastro.addEventListener('submit', async (event) => {
-            event.preventDefault();
-            const data = Object.fromEntries(new FormData(formCadastro).entries());
-            if (data.password !== document.getElementById('confirmarPassword').value) return showAlert("As senhas não coincidem!", "warning");
-            // Adicione outras validações se necessário
-            try {
-                const response = await fetch('/api/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-                const result = await response.json();
-                if (!response.ok) throw new Error(result.message);
-                showAlert(result.message, 'success');
-                setTimeout(() => window.location.href = 'login.html', 1500);
-            } catch (error) { showAlert(error.message || "Erro ao cadastrar."); }
-        });
-    }
-
-    // Formulário de Orçamento
+    
     const formOrcamento = document.getElementById('formOrcamento');
     if (formOrcamento) {
         formOrcamento.addEventListener('submit', async (event) => {
             event.preventDefault();
             const currentToken = localStorage.getItem('token');
-            if (!currentToken) {
-                showAlert("Você precisa estar logado para enviar um orçamento.", "warning");
-                return;
-            }
+            if (!currentToken) return showAlert("Você precisa estar logado para enviar um orçamento.", "warning");
             const data = Object.fromEntries(new FormData(formOrcamento).entries());
             try {
                 const response = await fetch('/api/orcamento', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${currentToken}` }, body: JSON.stringify(data) });
@@ -155,12 +124,42 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Formulário de Avaliação
+    // Formulário de Avaliação com CORREÇÃO DAS ESTRELAS
     const formAvaliacao = document.getElementById('formAvaliacao');
     if (formAvaliacao) {
-        // ... (lógica das estrelas) ...
+        const stars = document.querySelectorAll('.star-rating i');
+        const ratingInput = document.getElementById('rating');
+        
+        function resetStars() {
+            stars.forEach(star => star.classList.remove('selected'));
+        }
+
+        stars.forEach(star => {
+            star.addEventListener('mouseover', function () {
+                resetStars();
+                for (let i = 0; i < this.dataset.value; i++) {
+                    stars[i].classList.add('selected');
+                }
+            });
+            star.addEventListener('mouseout', () => {
+                resetStars();
+                if (ratingInput.value > 0) {
+                    for (let i = 0; i < ratingInput.value; i++) {
+                        stars[i].classList.add('selected');
+                    }
+                }
+            });
+            star.addEventListener('click', function () {
+                ratingInput.value = this.dataset.value;
+                resetStars();
+                for (let i = 0; i < ratingInput.value; i++) {
+                    stars[i].classList.add('selected');
+                }
+            });
+        });
+
         formAvaliacao.addEventListener('submit', async (event) => {
-             event.preventDefault();
+            event.preventDefault();
             const currentToken = localStorage.getItem('token');
             if (!currentToken) return showAlert("Você precisa estar logado para enviar uma avaliação.", "warning");
             const data = Object.fromEntries(new FormData(formAvaliacao).entries());
@@ -171,21 +170,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (!response.ok) throw new Error(result.message);
                 showAlert(result.message, 'success');
                 formAvaliacao.reset();
-                // ... (resetar estrelas) ...
+                ratingInput.value = 0;
+                resetStars();
             } catch (error) { showAlert(error.message || "Erro ao enviar avaliação."); }
         });
     }
 
-    // Carregar Avaliações na Página Inicial
-    if (document.getElementById('reviews-container')) {
-        // ... (código para carregar avaliações no carrossel) ...
-    }
-
-
     // =========================================================================
-    // LÓGICA DO PAINEL DE ADMINISTRAÇÃO (adm.html)
+    // PAINEL DE ADMINISTRAÇÃO (adm.html)
     // =========================================================================
-
     if (window.location.pathname.endsWith('adm.html')) {
         if (!token) {
             window.location.href = 'login.html';
@@ -220,33 +213,38 @@ document.addEventListener('DOMContentLoaded', function () {
 
         Object.keys(navLinks).forEach(key => {
             if(navLinks[key]) {
-                navLinks[key].addEventListener('click', (e) => { 
-                    e.preventDefault(); 
-                    showView(key); 
-                });
+                navLinks[key].addEventListener('click', (e) => { e.preventDefault(); showView(key); });
             }
         });
 
         const loadAndAttachAdminListeners = () => {
-            // --- LÓGICA PARA ORÇAMENTOS ---
             const orcamentosTbody = document.getElementById('orcamentos-tbody');
             if (orcamentosTbody) {
                 const loadOrcamentos = async () => {
                     try {
-                        const orcamentos = await fetchData('/api/admin-orcamentos'); // Rota da nova função
+                        const orcamentos = await fetchData('/api/admin-orcamentos');
                         orcamentosTbody.innerHTML = '';
                         if (!orcamentos || orcamentos.length === 0) {
                             orcamentosTbody.innerHTML = '<tr><td colspan="5" class="text-center">Nenhum orçamento solicitado.</td></tr>';
                             return;
                         }
-                        // ... preencher tabela de orçamentos ...
+                        orcamentos.forEach(o => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${o.client_name}</td>
+                                <td>${new Date(o.created_at).toLocaleDateString('pt-BR')}</td>
+                                <td>${o.event_type}</td>
+                                <td><span class="badge bg-primary">${o.status}</span></td>
+                                <td><button class="btn btn-sm btn-info view-details" data-orcamento='${JSON.stringify(o)}'><i class="bi bi-eye"></i></button></td>
+                            `;
+                            orcamentosTbody.appendChild(row);
+                        });
                     } catch (error) { showAlert(error.message, 'danger'); }
                 };
                 document.getElementById('nav-orcamentos').addEventListener('click', loadOrcamentos);
-                loadOrcamentos(); // Carga inicial
+                loadOrcamentos();
             }
 
-            // --- LÓGICA PARA CLIENTES ---
             const clientesTbody = document.getElementById('clientes-tbody');
             if (clientesTbody) {
                 const searchInput = document.getElementById('search-cliente-input');
@@ -272,54 +270,18 @@ document.addEventListener('DOMContentLoaded', function () {
                         });
                     } catch (error) { showAlert(error.message, 'danger'); }
                 };
-
-                clientesTbody.addEventListener('click', async (e) => {
-                    // ... lógica de delete ...
-                });
-                
                 searchButton.addEventListener('click', () => loadClientes(searchInput.value));
                 searchInput.addEventListener('keyup', e => { if (e.key === 'Enter') loadClientes(searchInput.value); });
                 document.getElementById('nav-clientes').addEventListener('click', () => loadClientes());
             }
-
-            // --- LÓGICA PARA AVALIAÇÕES ---
-            const avaliacoesTbody = document.getElementById('avaliacoes-tbody');
-            if (avaliacoesTbody) {
-                 const loadAvaliacoes = async () => {
-                    // ...
-                 };
-                 // ...
-                 document.getElementById('nav-avaliacoes').addEventListener('click', loadAvaliacoes);
-            }
         };
-
+        
         setupLogoutButtons(); 
         loadAndAttachAdminListeners();
     }
-
-    // =========================================================================
-    // LÓGICA PARA RECUPERAÇÃO DE SENHA
-    // =========================================================================
     
-    // Formulário Esqueci Senha
-    const formEsqueciSenha = document.getElementById('formEsqueciSenha');
-    if (formEsqueciSenha) {
-        // ...
-    }
-
-    // Formulário Resetar Senha
-    const formResetPassword = document.getElementById('formResetPassword');
-    if (formResetPassword) {
-        // ...
-    }
-
-
-    // =========================================================================
-    // LÓGICA PARA CARREGAMENTO DINÂMICO DE NAVBAR (em páginas secundárias)
-    // =========================================================================
-    
-    // Solução para carregar navbar em páginas como sobre.html, servicos.html, etc.
-    const navElement = document.querySelector('nav:not(:has(.container))'); // Apenas em navs vazios
+    // Carregamento dinâmico de navbar em páginas secundárias
+    const navElement = document.querySelector('nav:not(:has(.container))');
     if (navElement) {
         fetch('index.html')
             .then(res => res.text())
