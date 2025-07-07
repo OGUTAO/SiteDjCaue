@@ -1,32 +1,28 @@
-// netlify/functions/login.js
+// netlify/functions/login.js - NOVA VERSÃO
 
 require('dotenv').config();
-const db = require('../../database.js'); // Caminho ajustado para sair de 'netlify/functions'
+const pool = require('../../database.js'); // Importa o pool de conexão
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+const jwt =require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET || 'jwt_secret_key';
 
-exports.handler = async (event, context) => {
-    // A Netlify só permite que a função continue se o método for POST
+exports.handler = async (event) => {
     if (event.httpMethod !== 'POST') {
         return { statusCode: 405, body: 'Method Not Allowed' };
     }
 
     try {
         const { email, password } = JSON.parse(event.body);
-        const sql = 'SELECT * FROM users WHERE email = ?';
+        const sql = 'SELECT * FROM users WHERE email = $1'; // Sintaxe do PostgreSQL para parâmetros é $1, $2...
 
-        const user = await new Promise((resolve, reject) => {
-            db.get(sql, [email], (err, row) => {
-                if (err) reject(new Error("Erro interno do servidor."));
-                resolve(row);
-            });
-        });
+        // Faz a consulta usando o pool
+        const result = await pool.query(sql, [email]);
+        const user = result.rows[0]; // O usuário encontrado estará em result.rows
 
         if (!user || !(await bcrypt.compare(password, user.password))) {
             return {
                 statusCode: 401,
-                body: JSON.stringify({ message: 'E-mail ou senha inválidos.' })
+                body: JSON.stringify({ message: 'E-mail ou senha inválidos.' }),
             };
         }
 
@@ -34,10 +30,11 @@ exports.handler = async (event, context) => {
 
         return {
             statusCode: 200,
-            body: JSON.stringify({ message: 'Login bem-sucedido!', token: token, role: user.role })
+            body: JSON.stringify({ message: 'Login bem-sucedido!', token, role: user.role }),
         };
 
     } catch (error) {
-        return { statusCode: 500, body: JSON.stringify({ message: error.message || 'Erro ao processar login.' }) };
+        console.error('Erro no login:', error);
+        return { statusCode: 500, body: JSON.stringify({ message: 'Erro ao processar login.' }) };
     }
 };

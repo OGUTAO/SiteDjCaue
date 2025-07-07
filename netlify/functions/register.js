@@ -1,10 +1,10 @@
-// netlify/functions/register.js
+// netlify/functions/register.js - NOVA VERSÃO
 
 require('dotenv').config();
-const db = require('../../database.js');
+const pool = require('../../database.js');
 const bcrypt = require('bcryptjs');
 
-exports.handler = async (event, context) => {
+exports.handler = async (event) => {
     if (event.httpMethod !== 'POST') {
         return { statusCode: 405, body: 'Method Not Allowed' };
     }
@@ -16,14 +16,9 @@ exports.handler = async (event, context) => {
         }
 
         const hash = await bcrypt.hash(password, 10);
-        const sql = 'INSERT INTO users (name, email, phone, birth_date, password) VALUES (?, ?, ?, ?, ?)';
-
-        await new Promise((resolve, reject) => {
-            db.run(sql, [name, email, phone, birth_date, hash], function(err) {
-                if (err) reject(new Error("E-mail já cadastrado."));
-                resolve(this);
-            });
-        });
+        const sql = 'INSERT INTO users (name, email, phone, birth_date, password) VALUES ($1, $2, $3, $4, $5)';
+        
+        await pool.query(sql, [name, email, phone, birth_date, hash]);
 
         return {
             statusCode: 201,
@@ -31,7 +26,11 @@ exports.handler = async (event, context) => {
         };
 
     } catch (error) {
-        // Se o erro for de e-mail duplicado ou outro
-        return { statusCode: error.message.includes("cadastrado") ? 409 : 500, body: JSON.stringify({ message: error.message || "Erro ao cadastrar." }) };
+        // Verifica se o erro é de violação de chave única (e-mail duplicado)
+        if (error.code === '23505') { // Código de erro do PostgreSQL para unique_violation
+            return { statusCode: 409, body: JSON.stringify({ message: "E-mail já cadastrado." }) };
+        }
+        console.error('Erro no cadastro:', error);
+        return { statusCode: 500, body: JSON.stringify({ message: "Erro ao cadastrar." }) };
     }
 };
