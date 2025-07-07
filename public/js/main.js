@@ -88,9 +88,13 @@ document.addEventListener('DOMContentLoaded', function () {
         setupLogoutButtons();
     };
     
-    atualizarNavbar();
-    setupLogoutButtons();
-
+        // CHAMA A FUNÇÃO PARA ATUALIZAR O NAVBAR APENAS UMA VEZ NA PÁGINA INICIAL
+        // NAS OUTRAS PÁGINAS, O CÓDIGO HTML VAI CHAMAR ESSA FUNÇÃO
+        if (window.location.pathname === '/' || window.location.pathname.endsWith('index.html')) {
+            atualizarNavbar();
+        } else {
+            setupLogoutButtons(); // Configura o logout para o caso de o menu já estar no cache
+        }
     const setupPasswordToggle = () => {
         const togglePassword = document.getElementById('togglePassword');
         const passwordInput = document.getElementById('password');

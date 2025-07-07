@@ -51,7 +51,25 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/main.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', () => { fetch('index.html').then(res => res.text()).then(text => { const doc = new DOMParser().parseFromString(text, 'text/html'); document.querySelector('nav').innerHTML = doc.querySelector('nav').innerHTML; }) });
+        document.addEventListener('DOMContentLoaded', () => {
+            // Seleciona o elemento nav da página atual
+            const navElement = document.querySelector('nav');
+
+            // Busca o conteúdo da index.html
+            fetch('index.html')
+                .then(res => res.text())
+                .then(text => {
+                    const doc = new DOMParser().parseFromString(text, 'text/html');
+                    const sourceNav = doc.querySelector('nav'); // Pega o nav da index
+
+                    if (navElement && sourceNav) {
+                        navElement.innerHTML = sourceNav.innerHTML; // Copia o conteúdo do nav
+
+                        // SÓ DEPOIS de copiar o menu, CHAMA A FUNÇÃO PARA ATUALIZAR
+                        atualizarNavbar(); 
+                    }
+                });
+        });
     </script>
 </body>
 </html>
