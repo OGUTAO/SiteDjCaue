@@ -53,22 +53,20 @@
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         const navElement = document.querySelector('nav');
-
-        fetch('index.html')
-            .then(res => res.text())
-            .then(text => {
-                const doc = new DOMParser().parseFromString(text, 'text/html');
-                const sourceNav = doc.querySelector('nav');
-
-                if (navElement && sourceNav) {
-                    navElement.innerHTML = sourceNav.innerHTML;
-
-                    // AQUI ESTÁ A MUDANÇA CRUCIAL:
-                    // SÓ DEPOIS de copiar o menu, a função é chamada.
-                    atualizarNavbar(); 
-                }
-            });
+        if (navElement) {
+            fetch('index.html')
+                .then(res => res.text())
+                .then(text => {
+                    const doc = new DOMParser().parseFromString(text, 'text/html');
+                    const sourceNav = doc.querySelector('nav');
+                    if (sourceNav) {
+                        navElement.innerHTML = sourceNav.innerHTML;
+                        // A chamada que resolve o problema:
+                        atualizarNavbar(); 
+                    }
+                });
+        }
     });
-</script>
+    </script>
 </body>
 </html>
