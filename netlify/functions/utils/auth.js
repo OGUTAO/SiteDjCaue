@@ -12,7 +12,7 @@ function authenticateAdmin(event) {
         if (decoded.role !== 'admin') {
             return { statusCode: 403, body: JSON.stringify({ message: 'Acesso negado. Requer privilégios de administrador.' }) };
         }
-        // Se for admin, não retorna nada para continuar a execução
+        // Se for admin, retorna null para indicar sucesso e continuar a execução da função principal
         return null; 
     } catch (err) {
         return { statusCode: 403, body: JSON.stringify({ message: 'Token inválido ou expirado.' }) };
