@@ -61,9 +61,56 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     // =========================================================================
-    // EVENTOS GERAIS PARA TODAS AS PÁGINAS
+    // LÓGICA ESPECÍFICA DAS PÁGINAS
     // =========================================================================
     const token = localStorage.getItem('token');
+
+    // --- CARREGAR AVALIAÇÕES NA PÁGINA INICIAL (FUNCIONALIDADE ADICIONADA) ---
+    const reviewsContainer = document.getElementById('reviews-container');
+    if (reviewsContainer) {
+        fetch('/api/reviews')
+            .then(res => {
+                if (!res.ok) throw new Error('Falha ao buscar avaliações');
+                return res.json();
+            })
+            .then(reviews => {
+                const carouselControls = document.querySelectorAll('#reviewsCarousel .carousel-control-prev, #reviewsCarousel .carousel-control-next');
+                if (!reviews || reviews.length === 0) {
+                    reviewsContainer.innerHTML = '<div class="carousel-item active"><p class="text-center fst-italic">Seja o primeiro a avaliar o meu trabalho!</p></div>';
+                    carouselControls.forEach(control => control.style.display = 'none');
+                    return;
+                }
+
+                let reviewsHtml = '';
+                reviews.forEach((review, index) => {
+                    let starsHtml = '';
+                    for (let i = 0; i < 5; i++) {
+                        starsHtml += `<i class="bi ${i < review.rating ? 'bi-star-fill text-warning' : 'bi-star text-secondary'}"></i>`;
+                    }
+                    reviewsHtml += `
+                        <div class="carousel-item ${index === 0 ? 'active' : ''}">
+                            <div class="row justify-content-center">
+                                <div class="col-lg-8 text-center">
+                                    <p class="lead">"${review.text}"</p>
+                                    <div class="my-3">${starsHtml}</div>
+                                    <p class="fw-bold mb-0">${review.name}</p>
+                                </div>
+                            </div>
+                        </div>`;
+                });
+                reviewsContainer.innerHTML = reviewsHtml;
+                
+                if (reviews.length > 1) {
+                    carouselControls.forEach(control => control.style.display = 'block');
+                } else {
+                    carouselControls.forEach(control => control.style.display = 'none');
+                }
+            })
+            .catch(error => {
+                console.error("Erro ao carregar avaliações:", error);
+                reviewsContainer.innerHTML = '<div class="carousel-item active"><p class="text-center text-danger">Não foi possível carregar as avaliações no momento.</p></div>';
+            });
+    }
 
     // Formulário de Login
     const formLogin = document.getElementById('formLogin');
@@ -83,11 +130,11 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Formulário de Orçamento (CORRIGIDO)
+    // Formulário de Orçamento
     const formOrcamento = document.getElementById('formOrcamento');
     if (formOrcamento) {
         formOrcamento.addEventListener('submit', async (event) => {
-            event.preventDefault(); // Impede o recarregamento da página
+            event.preventDefault();
             const currentToken = localStorage.getItem('token');
             if (!currentToken) return showAlert("Você precisa estar logado para enviar um orçamento.", "warning");
             const data = Object.fromEntries(new FormData(formOrcamento).entries());
@@ -101,7 +148,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Formulário de Avaliação (CORRIGIDO)
+    // Formulário de Avaliação
     const formAvaliacao = document.getElementById('formAvaliacao');
     if (formAvaliacao) {
         const stars = document.querySelectorAll('.star-rating i');
@@ -122,7 +169,7 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         });
         formAvaliacao.addEventListener('submit', async (event) => {
-            event.preventDefault(); // Impede o recarregamento da página
+            event.preventDefault();
             const currentToken = localStorage.getItem('token');
             if (!currentToken) return showAlert("Você precisa estar logado para enviar uma avaliação.", "warning");
             const data = Object.fromEntries(new FormData(formAvaliacao).entries());
