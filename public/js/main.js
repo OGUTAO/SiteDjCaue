@@ -128,6 +128,40 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // --- Formulário de Cadastro ---
+    const formCadastro = document.getElementById('formCadastro');
+    if (formCadastro) {
+        formCadastro.addEventListener('submit', async (event) => {
+            event.preventDefault(); // Impede o recarregamento da página
+            const data = Object.fromEntries(new FormData(formCadastro).entries());
+
+            // Validações do frontend
+            if (data.email !== data.confirmarEmail) return showAlert("Os e-mails não coincidem!", "warning");
+            if (data.password.length < 6) return showAlert("A senha precisa ter no mínimo 6 caracteres.", "warning");
+            
+            try {
+                // Remove o campo de confirmação antes de enviar para a API
+                const payload = { ...data };
+                delete payload.confirmarEmail;
+
+                const response = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.message);
+                
+                showAlert(result.message, 'success');
+                setTimeout(() => window.location.href = 'login.html', 2000);
+
+            } catch (error) {
+                showAlert(error.message || "Erro ao tentar cadastrar.");
+            }
+        });
+    }
+
     // --- Formulário de Orçamento ---
     const formOrcamento = document.getElementById('formOrcamento');
     if (formOrcamento) {
@@ -386,10 +420,16 @@ document.addEventListener('DOMContentLoaded', function () {
         setupLogoutButtons();
     }
     
-    // --- LÓGICA DE CARREGAMENTO DA NAVBAR ---
+    // =========================================================================
+    // LÓGICA DE CARREGAMENTO DA NAVBAR
+    // =========================================================================
+    
+    // Se a página já tem a navbar (index.html), apenas atualiza os links.
     if (document.getElementById('navbar-links')) {
         atualizarNavbar();
     }
+    
+    // Se a página tem um nav vazio (páginas secundárias), carrega a estrutura do index.html.
     const navElement = document.querySelector('nav:not(:has(.container))');
     if (navElement) {
         fetch('index.html').then(res => res.text()).then(text => {
