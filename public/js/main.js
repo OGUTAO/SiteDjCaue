@@ -1,4 +1,4 @@
-// public/js/main.js - VERSÃO FINAL E COMPLETA
+// public/js/main.js - VERSÃO FINAL, COMPLETA E CORRIGIDA
 
 document.addEventListener('DOMContentLoaded', function () {
     // =========================================================================
@@ -6,9 +6,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // =========================================================================
     const showAlert = (message, type = 'danger') => {
         // Remove alerts antigos para não empilhar
-        const oldAlert = document.querySelector('.alert');
-        if (oldAlert) oldAlert.remove();
-
+        document.querySelectorAll('.alert').forEach(a => a.remove());
         const wrapper = document.createElement('div');
         wrapper.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show" role="alert" style="position: fixed; top: 20px; right: 20px; z-index: 2000; min-width: 250px;">${message}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>`;
         document.body.append(wrapper);
@@ -71,7 +69,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const formLogin = document.getElementById('formLogin');
     if (formLogin) {
         formLogin.addEventListener('submit', async (event) => {
-            event.preventDefault(); // Impede o recarregamento da página
+            event.preventDefault();
             const data = Object.fromEntries(new FormData(formLogin).entries());
             try {
                 const response = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
@@ -85,7 +83,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Formulário de Orçamento
+    // Formulário de Orçamento (CORRIGIDO)
     const formOrcamento = document.getElementById('formOrcamento');
     if (formOrcamento) {
         formOrcamento.addEventListener('submit', async (event) => {
@@ -103,7 +101,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Formulário de Avaliação
+    // Formulário de Avaliação (CORRIGIDO)
     const formAvaliacao = document.getElementById('formAvaliacao');
     if (formAvaliacao) {
         const stars = document.querySelectorAll('.star-rating i');
@@ -254,11 +252,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 } catch (error) { showAlert(error.message, 'danger'); }
             };
 
-            // Anexar ouvintes para os botões de ação (usando delegação de eventos)
+            // Anexar ouvintes para os botões de ação
             document.querySelector('.w-100.p-4').addEventListener('click', async (e) => {
                 const button = e.target.closest('button');
                 if (!button) return;
-
                 const id = button.dataset.id;
                 try {
                     let result;
@@ -273,7 +270,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                     if (result) {
                         showAlert(result.message, 'success');
-                        loadAvaliacoes(); // Recarrega a lista de avaliações
+                        loadAvaliacoes();
                     }
                 } catch (error) {
                     showAlert(error.message, 'danger');
@@ -298,13 +295,22 @@ document.addEventListener('DOMContentLoaded', function () {
         loadAndAttachAdminListeners();
     }
     
-    // Carregamento dinâmico de navbar em páginas secundárias
+    // =========================================================================
+    // LÓGICA DE CARREGAMENTO DA NAVBAR
+    // =========================================================================
+    
+    // Se a página já tem a navbar (index.html), apenas atualiza os links.
+    if (document.getElementById('navbar-links')) {
+        atualizarNavbar();
+    }
+    
+    // Se a página tem um nav vazio (páginas secundárias), carrega a estrutura do index.html.
     const navElement = document.querySelector('nav:not(:has(.container))');
     if (navElement) {
         fetch('index.html').then(res => res.text()).then(text => {
             const doc = new DOMParser().parseFromString(text, 'text/html');
             const sourceNav = doc.querySelector('nav');
-if (sourceNav) {
+            if (sourceNav) {
                 navElement.innerHTML = sourceNav.innerHTML;
                 atualizarNavbar();
             }
