@@ -1,7 +1,7 @@
 // netlify/functions/admin-orcamento-update-status.js
 require('dotenv').config();
 const pool = require('../../database.js');
-const { authenticateAdmin } = require('./utils/auth');
+const { authenticateAdmin } = require('./utils/auth.js');
 
 exports.handler = async (event) => {
     // Permite apenas o método PUT para atualização
