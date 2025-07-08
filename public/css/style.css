@@ -103,16 +103,6 @@ footer { background-color: #121212; padding: 40px 0; text-align: center; }
     color: #6c757d;
 }
 
-/* Correção para o fundo branco do campo de data */
-input[type="date"] {
-    color-scheme: dark;
-}
-
-/* Garante que o ícone do calendário fique visível no tema escuro */
-input[type="date"]::-webkit-calendar-picker-indicator {
-    filter: invert(0.8);
-}
-
 
 /* Cor roxa da marca para elementos de destaque */
 .text-brand {
@@ -168,4 +158,18 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 /* Opcional: faz o texto ficar um pouco mais claro ao passar o mouse */
 .award-card:hover .aviso-clique {
     color: #c77dff !important; 
+}
+
+/* Garante que o calendário e os controles internos usem o tema escuro */
+input[type="date"] {
+    color-scheme: dark;
+}
+
+/* Força o texto do placeholder (dd/mm/aaaa) a ser branco em navegadores WebKit (Chrome, Edge, etc.) */
+input[type="date"]::-webkit-datetime-edit {
+    color: #f5f5f5;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.8);
 }
