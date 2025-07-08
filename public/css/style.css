@@ -173,3 +173,10 @@ input[type="date"]::-webkit-datetime-edit {
 input[type="date"]::-webkit-calendar-picker-indicator {
     filter: invert(0.8);
 }
+
+#modal-quote-event-details {
+    /* Esta propriedade força a quebra de textos longos que não têm espaços */
+    word-break: break-word;
+    /* A propriedade abaixo, que já existe no seu HTML, garante que quebras de linha intencionais (Enter) sejam mantidas */
+    white-space: pre-wrap;
+}
