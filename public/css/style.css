@@ -175,8 +175,12 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 #modal-quote-event-details {
-    /* Esta propriedade força a quebra de textos longos que não têm espaços */
-    word-break: break-word;
-    /* A propriedade abaixo, que já existe no seu HTML, garante que quebras de linha intencionais (Enter) sejam mantidas */
+    /* Esta é a propriedade correta para forçar a quebra de textos longos e contínuos */
+    overflow-wrap: break-word;
+    
+    /* Esta linha é opcional, mas garante que textos extremamente longos não causem problemas */
+    word-wrap: break-word; 
+
+    /* Esta linha garante que quebras de linha intencionais (Enter) ainda funcionem */
     white-space: pre-wrap;
 }
