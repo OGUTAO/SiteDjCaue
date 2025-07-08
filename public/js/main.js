@@ -1,4 +1,4 @@
-// public/js/main.js - VERSÃO FINAL E COMPLETA
+// public/js/main.js - VERSÃO FINAL, COMPLETA E CORRIGIDA
 
 document.addEventListener('DOMContentLoaded', function () {
     // =========================================================================
@@ -62,6 +62,32 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     const token = localStorage.getItem('token');
 
+    // Formulário de Login com CORREÇÃO
+    const formLogin = document.getElementById('formLogin');
+    if (formLogin) {
+        formLogin.addEventListener('submit', async (event) => {
+            event.preventDefault(); // Impede o recarregamento padrão da página
+            const data = Object.fromEntries(new FormData(formLogin).entries());
+            try {
+                const response = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.message);
+                
+                // Salva o token e redireciona
+                localStorage.setItem('token', result.token);
+                showAlert(result.message, 'success');
+                
+                if (result.role === 'admin') { 
+                    setTimeout(() => window.location.href = 'adm.html', 1000); 
+                } else { 
+                    setTimeout(() => window.location.href = 'index.html', 1000); 
+                }
+            } catch (error) { 
+                showAlert(error.message || "Erro desconhecido.", 'danger'); 
+            }
+        });
+    }
+
     // Lógica Formulário de Avaliação (STARS)
     const formAvaliacao = document.getElementById('formAvaliacao');
     if (formAvaliacao) {
@@ -93,7 +119,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.message);
                 showAlert(result.message, 'success');
-                formAvaliacao.reset();
+                formAvaliaco.reset();
                 ratingInput.value = 0;
                 resetStars();
             } catch (error) { showAlert(error.message || "Erro ao enviar avaliação."); }
