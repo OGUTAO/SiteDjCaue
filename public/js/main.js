@@ -161,6 +161,50 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     }
+    
+    // --- Formulário Esqueci a Senha ---
+    const formEsqueciSenha = document.getElementById('formEsqueciSenha');
+    if (formEsqueciSenha) {
+        formEsqueciSenha.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const data = Object.fromEntries(new FormData(formEsqueciSenha).entries());
+            try {
+                const response = await fetch('/api/forgot-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.message);
+                showAlert(result.message, 'success');
+                formEsqueciSenha.reset();
+            } catch (error) { showAlert(error.message || "Erro ao solicitar recuperação."); }
+        });
+    }
+
+    // --- Formulário Redefinir Senha ---
+    const formResetPassword = document.getElementById('formResetPassword');
+    if (formResetPassword) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlToken = urlParams.get('token');
+        if (urlToken) {
+            document.getElementById('token').value = urlToken;
+        } else {
+            showAlert('Token de recuperação não encontrado na URL.', 'danger');
+        }
+
+        formResetPassword.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const data = Object.fromEntries(new FormData(formResetPassword).entries());
+            if (data.password.length < 6) return showAlert('A nova senha precisa ter no mínimo 6 caracteres.', 'warning');
+            if (data.password !== data.confirmPassword) return showAlert('As senhas não coincidem!', 'warning');
+            
+            try {
+                const payload = { token: data.token, password: data.password };
+                const response = await fetch('/api/reset-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.message);
+                showAlert(result.message, 'success');
+                setTimeout(() => window.location.href = 'login.html', 2000);
+            } catch (error) { showAlert(error.message || "Erro ao redefinir a senha."); }
+        });
+    }
 
     // --- Formulário de Orçamento ---
     const formOrcamento = document.getElementById('formOrcamento');
