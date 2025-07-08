@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // =========================================================================
     const token = localStorage.getItem('token');
 
-    // --- CARREGAR AVALIAÇÕES NA PÁGINA INICIAL (FUNCIONALIDADE ADICIONADA) ---
+    // --- CARREGAR AVALIAÇÕES NA PÁGINA INICIAL ---
     const reviewsContainer = document.getElementById('reviews-container');
     if (reviewsContainer) {
         fetch('/api/reviews')
@@ -80,7 +80,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     carouselControls.forEach(control => control.style.display = 'none');
                     return;
                 }
-
                 let reviewsHtml = '';
                 reviews.forEach((review, index) => {
                     let starsHtml = '';
@@ -99,7 +98,6 @@ document.addEventListener('DOMContentLoaded', function () {
                         </div>`;
                 });
                 reviewsContainer.innerHTML = reviewsHtml;
-                
                 if (reviews.length > 1) {
                     carouselControls.forEach(control => control.style.display = 'block');
                 } else {
@@ -112,7 +110,7 @@ document.addEventListener('DOMContentLoaded', function () {
             });
     }
 
-    // Formulário de Login
+    // --- Formulário de Login ---
     const formLogin = document.getElementById('formLogin');
     if (formLogin) {
         formLogin.addEventListener('submit', async (event) => {
@@ -130,7 +128,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Formulário de Orçamento
+    // --- Formulário de Orçamento ---
     const formOrcamento = document.getElementById('formOrcamento');
     if (formOrcamento) {
         formOrcamento.addEventListener('submit', async (event) => {
@@ -148,7 +146,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Formulário de Avaliação
+    // --- Formulário de Avaliação ---
     const formAvaliacao = document.getElementById('formAvaliacao');
     if (formAvaliacao) {
         const stars = document.querySelectorAll('.star-rating i');
@@ -198,11 +196,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const responseBody = await response.text();
             if (!response.ok) {
                 let errorMsg = 'Erro desconhecido.';
-                try {
-                    errorMsg = JSON.parse(responseBody).message;
-                } catch(e) {
-                    errorMsg = `Erro ${response.status}: Falha ao comunicar com o servidor.`;
-                }
+                try { errorMsg = JSON.parse(responseBody).message; } catch(e) { errorMsg = `Erro ${response.status}: Falha ao comunicar com o servidor.`; }
                 if (response.status === 401 || response.status === 403) {
                     showAlert(errorMsg || "Sessão expirada ou acesso negado. Redirecionando...", "warning");
                     localStorage.removeItem('token');
@@ -226,132 +220,176 @@ document.addEventListener('DOMContentLoaded', function () {
             if (navLinks[key]) navLinks[key].addEventListener('click', (e) => { e.preventDefault(); showView(key); });
         });
 
-        const loadAndAttachAdminListeners = () => {
-            // Lógica para ORÇAMENTOS
-            const orcamentosTbody = document.getElementById('orcamentos-tbody');
-            const loadOrcamentos = async () => {
-                try {
-                    const orcamentos = await fetchData('/api/admin-orcamentos');
-                    orcamentosTbody.innerHTML = '';
-                    if (!orcamentos || orcamentos.length === 0) {
-                        orcamentosTbody.innerHTML = '<tr><td colspan="5" class="text-center">Nenhum orçamento solicitado.</td></tr>';
-                        return;
-                    }
-                    orcamentos.forEach(o => {
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td>${o.client_name}</td>
-                            <td>${new Date(o.created_at).toLocaleDateString('pt-BR')}</td>
-                            <td>${o.event_type}</td>
-                            <td><span class="badge bg-info">${o.status}</span></td>
-                            <td><button class="btn btn-sm btn-primary view-details" data-orcamento='${JSON.stringify(o)}'><i class="bi bi-eye-fill"></i></button></td>`;
-                        orcamentosTbody.appendChild(row);
-                    });
-                } catch (error) { showAlert(error.message, 'danger'); }
-            };
+        // --- LÓGICA DE ORÇAMENTOS E CLIENTES (COM AÇÕES) ---
+        const orcamentosTbody = document.getElementById('orcamentos-tbody');
+        const quoteDetailModal = new bootstrap.Modal(document.getElementById('quoteDetailModal'));
+        
+        const loadOrcamentos = async () => {
+            try {
+                const orcamentos = await fetchData('/api/admin-orcamentos');
+                orcamentosTbody.innerHTML = '';
+                if (!orcamentos || orcamentos.length === 0) {
+                    orcamentosTbody.innerHTML = '<tr><td colspan="5" class="text-center">Nenhum orçamento solicitado.</td></tr>';
+                    return;
+                }
+                orcamentos.forEach(o => {
+                    const row = document.createElement('tr');
+                    const statusClass = `status-select-${o.status.toLowerCase()}`;
+                    row.innerHTML = `
+                        <td>${o.client_name}</td>
+                        <td>${new Date(o.created_at).toLocaleDateString('pt-BR')}</td>
+                        <td>${o.event_type}</td>
+                        <td>
+                            <select class="form-select form-select-sm bg-dark text-white select-status ${statusClass}" data-id="${o.id}">
+                                <option value="Pendente" ${o.status === 'Pendente' ? 'selected' : ''}>Pendente</option>
+                                <option value="Concluido" ${o.status === 'Concluido' ? 'selected' : ''}>Concluído</option>
+                                <option value="Cancelado" ${o.status === 'Cancelado' ? 'selected' : ''}>Cancelado</option>
+                                <option value="Rejeitado" ${o.status === 'Rejeitado' ? 'selected' : ''}>Rejeitado</option>
+                            </select>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-primary view-details" title="Ver Detalhes" data-orcamento='${JSON.stringify(o)}'><i class="bi bi-eye-fill"></i></button>
+                            <button class="btn btn-sm btn-danger delete-orcamento" title="Excluir" data-id="${o.id}"><i class="bi bi-trash-fill"></i></button>
+                        </td>`;
+                    orcamentosTbody.appendChild(row);
+                });
+            } catch (error) { showAlert(error.message, 'danger'); }
+        };
 
-            // Lógica para CLIENTES
-            const clientesTbody = document.getElementById('clientes-tbody');
-            const loadClientes = async (searchTerm = '') => {
-                try {
-                    const clientes = await fetchData(`/api/admin-clientes?search=${encodeURIComponent(searchTerm)}`);
-                    clientesTbody.innerHTML = '';
-                    if (clientes.length === 0) {
-                        clientesTbody.innerHTML = '<tr><td colspan="5" class="text-center">Nenhum cliente encontrado.</td></tr>';
-                        return;
-                    }
-                    clientes.forEach(c => {
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td>${c.name}</td>
-                            <td>${c.email}</td>
-                            <td>${c.phone || 'N/A'}</td>
-                            <td>${c.birth_date ? new Date(c.birth_date).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : 'N/A'}</td>
-                            <td><button class="btn btn-sm btn-danger delete-cliente" data-id="${c.id}"><i class="bi bi-trash-fill"></i></button></td>`;
-                        clientesTbody.appendChild(row);
-                    });
-                } catch (error) { showAlert(error.message, 'danger'); }
-            };
+        const clientesTbody = document.getElementById('clientes-tbody');
+        const loadClientes = async (searchTerm = '') => {
+            try {
+                const clientes = await fetchData(`/api/admin-clientes?search=${encodeURIComponent(searchTerm)}`);
+                clientesTbody.innerHTML = '';
+                if (clientes.length === 0) {
+                    clientesTbody.innerHTML = '<tr><td colspan="5" class="text-center">Nenhum cliente encontrado.</td></tr>';
+                    return;
+                }
+                clientes.forEach(c => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${c.name}</td>
+                        <td>${c.email}</td>
+                        <td>${c.phone || 'N/A'}</td>
+                        <td>${c.birth_date ? new Date(c.birth_date).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : 'N/A'}</td>
+                        <td><button class="btn btn-sm btn-danger delete-cliente" data-id="${c.id}"><i class="bi bi-trash-fill"></i></button></td>`;
+                    clientesTbody.appendChild(row);
+                });
+            } catch (error) { showAlert(error.message, 'danger'); }
+        };
 
-            // Lógica para AVALIAÇÕES
-            const avaliacoesTbody = document.getElementById('avaliacoes-tbody');
-            const loadAvaliacoes = async () => {
-                try {
-                    const avaliacoes = await fetchData('/api/admin-avaliacoes');
-                    avaliacoesTbody.innerHTML = '';
-                    if (avaliacoes.length === 0) {
-                        avaliacoesTbody.innerHTML = '<tr><td colspan="4" class="text-center">Nenhuma avaliação encontrada.</td></tr>';
-                        return;
-                    }
-                    avaliacoes.forEach(a => {
-                        const row = document.createElement('tr');
-                        const statusBadge = a.status === 'Aprovada' ? 'bg-success' : a.status === 'Rejeitada' ? 'bg-danger' : 'bg-warning text-dark';
-                        row.innerHTML = `
-                            <td>${a.name}</td>
-                            <td><div class="truncate-text" title="${a.text}">${a.text}</div></td>
-                            <td><span class="badge ${statusBadge}">${a.status}</span></td>
-                            <td>
-                                ${a.status === 'Pendente' ? `<button class="btn btn-sm btn-success approve-review" title="Aprovar" data-id="${a.id}"><i class="bi bi-check-lg"></i></button> <button class="btn btn-sm btn-warning reject-review" title="Rejeitar" data-id="${a.id}"><i class="bi bi-x-lg"></i></button>` : ''}
-                                <button class="btn btn-sm btn-danger delete-review" title="Excluir" data-id="${a.id}"><i class="bi bi-trash-fill"></i></button>
-                            </td>`;
-                        avaliacoesTbody.appendChild(row);
-                    });
-                } catch (error) { showAlert(error.message, 'danger'); }
-            };
+        // --- LÓGICA PARA AVALIAÇÕES (COM AÇÕES) ---
+        const avaliacoesTbody = document.getElementById('avaliacoes-tbody');
+        const loadAvaliacoes = async () => {
+            try {
+                const avaliacoes = await fetchData('/api/admin-avaliacoes');
+                avaliacoesTbody.innerHTML = '';
+                if (avaliacoes.length === 0) {
+                    avaliacoesTbody.innerHTML = '<tr><td colspan="4" class="text-center">Nenhuma avaliação encontrada.</td></tr>';
+                    return;
+                }
+                avaliacoes.forEach(a => {
+                    const row = document.createElement('tr');
+                    const statusBadge = a.status === 'Aprovada' ? 'bg-success' : a.status === 'Rejeitada' ? 'bg-danger' : 'bg-warning text-dark';
+                    row.innerHTML = `
+                        <td>${a.name}</td>
+                        <td><div class="truncate-text" title="${a.text}">${a.text}</div></td>
+                        <td><span class="badge ${statusBadge}">${a.status}</span></td>
+                        <td>
+                            ${a.status === 'Pendente' ? `<button class="btn btn-sm btn-success approve-review" title="Aprovar" data-id="${a.id}"><i class="bi bi-check-lg"></i></button> <button class="btn btn-sm btn-warning reject-review" title="Rejeitar" data-id="${a.id}"><i class="bi bi-x-lg"></i></button>` : ''}
+                            <button class="btn btn-sm btn-danger delete-review" title="Excluir" data-id="${a.id}"><i class="bi bi-trash-fill"></i></button>
+                        </td>`;
+                    avaliacoesTbody.appendChild(row);
+                });
+            } catch (error) { showAlert(error.message, 'danger'); }
+        };
 
-            // Anexar ouvintes para os botões de ação
-            document.querySelector('.w-100.p-4').addEventListener('click', async (e) => {
-                const button = e.target.closest('button');
-                if (!button) return;
-                const id = button.dataset.id;
+        // --- ANEXAR OUVINTES DE EVENTOS (DELEGAÇÃO) ---
+        const mainPanel = document.querySelector('.w-100.p-4');
+        
+        mainPanel.addEventListener('change', async (e) => {
+            if (e.target.classList.contains('select-status')) {
+                const id = e.target.dataset.id;
+                const status = e.target.value;
                 try {
-                    let result;
-                    if (button.classList.contains('approve-review')) {
-                        result = await fetchData(`/api/admin-avaliacao-approve?id=${id}`, { method: 'PUT' });
-                    } else if (button.classList.contains('reject-review')) {
-                        result = await fetchData(`/api/admin-avaliacao-reject?id=${id}`, { method: 'PUT' });
-                    } else if (button.classList.contains('delete-review')) {
-                        if (confirm('Tem certeza que deseja excluir esta avaliação?')) {
-                            result = await fetchData(`/api/admin-avaliacao-delete?id=${id}`, { method: 'DELETE' });
-                        }
-                    }
-                    if (result) {
-                        showAlert(result.message, 'success');
-                        loadAvaliacoes();
-                    }
+                    const result = await fetchData(`/api/admin-orcamento-update-status?id=${id}`, {
+                        method: 'PUT',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ status })
+                    });
+                    showAlert(result.message, 'success');
+                    loadOrcamentos();
                 } catch (error) {
                     showAlert(error.message, 'danger');
                 }
-            });
-
-            // Anexar ouvintes para a navegação
-            if (orcamentosTbody) document.getElementById('nav-orcamentos').addEventListener('click', loadOrcamentos);
-            if (clientesTbody) {
-                const searchInput = document.getElementById('search-cliente-input');
-                document.getElementById('nav-clientes').addEventListener('click', () => loadClientes(searchInput.value));
-                document.getElementById('search-cliente-button').addEventListener('click', () => loadClientes(searchInput.value));
-                searchInput.addEventListener('keyup', e => { if (e.key === 'Enter') loadClientes(searchInput.value); });
             }
-            if (avaliacoesTbody) document.getElementById('nav-avaliacoes').addEventListener('click', loadAvaliacoes);
-            
-            // Carga inicial
-            loadOrcamentos();
-        };
+        });
 
+        mainPanel.addEventListener('click', async (e) => {
+            const button = e.target.closest('button');
+            if (!button) return;
+            const id = button.dataset.id;
+            try {
+                let result;
+                // Ações de Avaliações
+                if (button.classList.contains('approve-review')) {
+                    result = await fetchData(`/api/admin-avaliacao-approve?id=${id}`, { method: 'PUT' });
+                } else if (button.classList.contains('reject-review')) {
+                    result = await fetchData(`/api/admin-avaliacao-reject?id=${id}`, { method: 'PUT' });
+                } else if (button.classList.contains('delete-review')) {
+                    if (confirm('Tem certeza que deseja excluir esta avaliação?')) {
+                        result = await fetchData(`/api/admin-avaliacao-delete?id=${id}`, { method: 'DELETE' });
+                    }
+                }
+                // Ações de Orçamentos
+                else if (button.classList.contains('view-details')) {
+                    const data = JSON.parse(button.dataset.orcamento);
+                    document.getElementById('modal-quote-client-name').textContent = data.client_name;
+                    document.getElementById('modal-quote-client-email').textContent = data.client_email;
+                    document.getElementById('modal-quote-client-phone').textContent = data.client_phone;
+                    document.getElementById('modal-quote-event-type').textContent = data.event_type;
+                    document.getElementById('modal-quote-event-date').textContent = new Date(data.event_date).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+                    document.getElementById('modal-quote-event-time').textContent = `${data.start_time} - ${data.end_time}`;
+                    document.getElementById('modal-quote-event-location').textContent = data.location;
+                    document.getElementById('modal-quote-event-details').textContent = data.details || 'Nenhum detalhe adicional.';
+                    document.getElementById('modal-quote-solicitation-date').textContent = new Date(data.created_at).toLocaleString('pt-BR');
+                    quoteDetailModal.show();
+                } else if (button.classList.contains('delete-orcamento')) {
+                    if (confirm('Tem certeza que deseja excluir este orçamento?')) {
+                        result = await fetchData(`/api/admin-orcamento-delete?id=${id}`, { method: 'DELETE' });
+                    }
+                }
+
+                if (result) {
+                    showAlert(result.message, 'success');
+                    loadAvaliacoes();
+                    loadOrcamentos();
+                }
+            } catch (error) {
+                showAlert(error.message, 'danger');
+            }
+        });
+        
+        // --- Anexar ouvintes para a navegação e carga inicial ---
+        if (orcamentosTbody) document.getElementById('nav-orcamentos').addEventListener('click', loadOrcamentos);
+        if (clientesTbody) {
+            const searchInput = document.getElementById('search-cliente-input');
+            document.getElementById('nav-clientes').addEventListener('click', () => loadClientes(searchInput.value));
+            document.getElementById('search-cliente-button').addEventListener('click', () => loadClientes(searchInput.value));
+            searchInput.addEventListener('keyup', e => { if (e.key === 'Enter') loadClientes(searchInput.value); });
+        }
+        if (avaliacoesTbody) document.getElementById('nav-avaliacoes').addEventListener('click', loadAvaliacoes);
+        
+        loadOrcamentos();
+        loadClientes();
+        loadAvaliacoes();
         setupLogoutButtons();
-        loadAndAttachAdminListeners();
     }
     
-    // =========================================================================
-    // LÓGICA DE CARREGAMENTO DA NAVBAR
-    // =========================================================================
-    
-    // Se a página já tem a navbar (index.html), apenas atualiza os links.
+    // --- LÓGICA DE CARREGAMENTO DA NAVBAR ---
     if (document.getElementById('navbar-links')) {
         atualizarNavbar();
     }
-    
-    // Se a página tem um nav vazio (páginas secundárias), carrega a estrutura do index.html.
     const navElement = document.querySelector('nav:not(:has(.container))');
     if (navElement) {
         fetch('index.html').then(res => res.text()).then(text => {
