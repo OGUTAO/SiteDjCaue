@@ -5,17 +5,22 @@ const JWT_SECRET = process.env.JWT_SECRET || 'jwt_secret_key';
 function authenticateAdmin(event) {
     const authHeader = event.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
-    if (token == null) return { statusCode: 401, body: JSON.stringify({ message: 'Token não fornecido.' }) };
+
+    if (!token) {
+        throw { statusCode: 401, message: 'Token não fornecido.' };
+    }
 
     try {
         const decoded = jwt.verify(token, JWT_SECRET);
         if (decoded.role !== 'admin') {
-            return { statusCode: 403, body: JSON.stringify({ message: 'Acesso negado. Requer privilégios de administrador.' }) };
+            throw { statusCode: 403, message: 'Acesso negado. Requer privilégios de administrador.' };
         }
-        // Se for admin, retorna null para indicar sucesso e continuar a execução da função principal
-        return null; 
+        // CORREÇÃO: Não retorna nada em caso de sucesso.
+        // A função só vai "reclamar" se houver um erro.
+        return; 
     } catch (err) {
-        return { statusCode: 403, body: JSON.stringify({ message: 'Token inválido ou expirado.' }) };
+        // Lança um erro padronizado para ser capturado pelo bloco catch da função principal.
+        throw { statusCode: err.statusCode || 403, message: err.message || 'Token inválido ou expirado.' };
     }
 }
 

@@ -1,14 +1,18 @@
-// public/js/main.js - VERSÃO FINAL, COMPLETA E CORRIGIDA
+// public/js/main.js - VERSÃO FINAL E COMPLETA
 
 document.addEventListener('DOMContentLoaded', function () {
     // =========================================================================
     // FUNÇÕES DE AJUDA E CONFIGURAÇÃO
     // =========================================================================
     const showAlert = (message, type = 'danger') => {
+        // Remove alerts antigos para não empilhar
+        const oldAlert = document.querySelector('.alert');
+        if (oldAlert) oldAlert.remove();
+
         const wrapper = document.createElement('div');
-        wrapper.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show" role="alert" style="position: fixed; top: 20px; right: 20px; z-index: 2000;">${message}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>`;
+        wrapper.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show" role="alert" style="position: fixed; top: 20px; right: 20px; z-index: 2000; min-width: 250px;">${message}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>`;
         document.body.append(wrapper);
-        setTimeout(() => wrapper.remove(), 4000);
+        setTimeout(() => wrapper.remove(), 5000);
     };
 
     const setupLogoutButtons = () => {
@@ -39,10 +43,14 @@ document.addEventListener('DOMContentLoaded', function () {
                     const userData = await response.json();
                     userName = userData.name.split(' ')[0];
                 } else {
-                    localStorage.removeItem('token'); window.location.reload(); return;
+                    localStorage.removeItem('token');
+                    if (!window.location.pathname.endsWith('adm.html')) window.location.reload();
+                    return;
                 }
             } catch (error) {
-                localStorage.removeItem('token'); window.location.reload(); return;
+                localStorage.removeItem('token');
+                if (!window.location.pathname.endsWith('adm.html')) window.location.reload();
+                return;
             }
             linksHtml += `
                 <li class="nav-item d-flex align-items-center"><span class="nav-link navbar-text text-white-50 me-2">Olá, ${userName}</span></li>
@@ -55,40 +63,47 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     // =========================================================================
-    // EVENTOS GERAIS
+    // EVENTOS GERAIS PARA TODAS AS PÁGINAS
     // =========================================================================
-    if (document.getElementById('navbar-links')) {
-        atualizarNavbar();
-    }
     const token = localStorage.getItem('token');
 
-    // Formulário de Login com CORREÇÃO
+    // Formulário de Login
     const formLogin = document.getElementById('formLogin');
     if (formLogin) {
         formLogin.addEventListener('submit', async (event) => {
-            event.preventDefault(); // Impede o recarregamento padrão da página
+            event.preventDefault(); // Impede o recarregamento da página
             const data = Object.fromEntries(new FormData(formLogin).entries());
             try {
                 const response = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.message);
-                
-                // Salva o token e redireciona
                 localStorage.setItem('token', result.token);
                 showAlert(result.message, 'success');
-                
-                if (result.role === 'admin') { 
-                    setTimeout(() => window.location.href = 'adm.html', 1000); 
-                } else { 
-                    setTimeout(() => window.location.href = 'index.html', 1000); 
-                }
-            } catch (error) { 
-                showAlert(error.message || "Erro desconhecido.", 'danger'); 
-            }
+                if (result.role === 'admin') { setTimeout(() => window.location.href = 'adm.html', 1000); } 
+                else { setTimeout(() => window.location.href = 'index.html', 1000); }
+            } catch (error) { showAlert(error.message || "Erro desconhecido.", 'danger'); }
         });
     }
 
-    // Lógica Formulário de Avaliação (STARS)
+    // Formulário de Orçamento
+    const formOrcamento = document.getElementById('formOrcamento');
+    if (formOrcamento) {
+        formOrcamento.addEventListener('submit', async (event) => {
+            event.preventDefault(); // Impede o recarregamento da página
+            const currentToken = localStorage.getItem('token');
+            if (!currentToken) return showAlert("Você precisa estar logado para enviar um orçamento.", "warning");
+            const data = Object.fromEntries(new FormData(formOrcamento).entries());
+            try {
+                const response = await fetch('/api/orcamento', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${currentToken}` }, body: JSON.stringify(data) });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.message);
+                showAlert(result.message, 'success');
+                formOrcamento.reset();
+            } catch (error) { showAlert(error.message || "Erro ao enviar solicitação."); }
+        });
+    }
+
+    // Formulário de Avaliação
     const formAvaliacao = document.getElementById('formAvaliacao');
     if (formAvaliacao) {
         const stars = document.querySelectorAll('.star-rating i');
@@ -109,7 +124,7 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         });
         formAvaliacao.addEventListener('submit', async (event) => {
-            event.preventDefault();
+            event.preventDefault(); // Impede o recarregamento da página
             const currentToken = localStorage.getItem('token');
             if (!currentToken) return showAlert("Você precisa estar logado para enviar uma avaliação.", "warning");
             const data = Object.fromEntries(new FormData(formAvaliacao).entries());
@@ -119,7 +134,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.message);
                 showAlert(result.message, 'success');
-                formAvaliaco.reset();
+                formAvaliacao.reset();
                 ratingInput.value = 0;
                 resetStars();
             } catch (error) { showAlert(error.message || "Erro ao enviar avaliação."); }
@@ -135,17 +150,22 @@ document.addEventListener('DOMContentLoaded', function () {
         const fetchData = async (endpoint, options = {}) => {
             options.headers = { ...options.headers, 'Authorization': `Bearer ${token}` };
             const response = await fetch(endpoint, options);
+            const responseBody = await response.text();
             if (!response.ok) {
-                if (response.status === 401 || response.status === 403 || response.status === 502) {
-                    showAlert("Sessão expirada ou acesso negado. Redirecionando...", "warning");
+                let errorMsg = 'Erro desconhecido.';
+                try {
+                    errorMsg = JSON.parse(responseBody).message;
+                } catch(e) {
+                    errorMsg = `Erro ${response.status}: Falha ao comunicar com o servidor.`;
+                }
+                if (response.status === 401 || response.status === 403) {
+                    showAlert(errorMsg || "Sessão expirada ou acesso negado. Redirecionando...", "warning");
                     localStorage.removeItem('token');
                     setTimeout(() => window.location.href = 'login.html', 2500);
                 }
-                const errorResult = await response.json().catch(() => ({ message: 'Falha ao comunicar com o servidor.' }));
-                throw new Error(errorResult.message);
+                throw new Error(errorMsg);
             }
-            const text = await response.text();
-            return text ? JSON.parse(text) : {};
+            return responseBody ? JSON.parse(responseBody) : {};
         };
 
         const navLinks = { orcamentos: document.getElementById('nav-orcamentos'), clientes: document.getElementById('nav-clientes'), avaliacoes: document.getElementById('nav-avaliacoes') };
@@ -162,7 +182,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         const loadAndAttachAdminListeners = () => {
-            // --- ORÇAMENTOS ---
+            // Lógica para ORÇAMENTOS
             const orcamentosTbody = document.getElementById('orcamentos-tbody');
             const loadOrcamentos = async () => {
                 try {
@@ -185,7 +205,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 } catch (error) { showAlert(error.message, 'danger'); }
             };
 
-            // --- CLIENTES ---
+            // Lógica para CLIENTES
             const clientesTbody = document.getElementById('clientes-tbody');
             const loadClientes = async (searchTerm = '') => {
                 try {
@@ -208,7 +228,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 } catch (error) { showAlert(error.message, 'danger'); }
             };
 
-            // --- AVALIAÇÕES ---
+            // Lógica para AVALIAÇÕES
             const avaliacoesTbody = document.getElementById('avaliacoes-tbody');
             const loadAvaliacoes = async () => {
                 try {
@@ -220,7 +240,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                     avaliacoes.forEach(a => {
                         const row = document.createElement('tr');
-                        const statusBadge = a.status === 'Aprovada' ? 'bg-success' : a.status === 'Rejeitada' ? 'bg-danger' : 'bg-warning';
+                        const statusBadge = a.status === 'Aprovada' ? 'bg-success' : a.status === 'Rejeitada' ? 'bg-danger' : 'bg-warning text-dark';
                         row.innerHTML = `
                             <td>${a.name}</td>
                             <td><div class="truncate-text" title="${a.text}">${a.text}</div></td>
@@ -234,7 +254,33 @@ document.addEventListener('DOMContentLoaded', function () {
                 } catch (error) { showAlert(error.message, 'danger'); }
             };
 
-            // Anexar ouvintes
+            // Anexar ouvintes para os botões de ação (usando delegação de eventos)
+            document.querySelector('.w-100.p-4').addEventListener('click', async (e) => {
+                const button = e.target.closest('button');
+                if (!button) return;
+
+                const id = button.dataset.id;
+                try {
+                    let result;
+                    if (button.classList.contains('approve-review')) {
+                        result = await fetchData(`/api/admin-avaliacao-approve?id=${id}`, { method: 'PUT' });
+                    } else if (button.classList.contains('reject-review')) {
+                        result = await fetchData(`/api/admin-avaliacao-reject?id=${id}`, { method: 'PUT' });
+                    } else if (button.classList.contains('delete-review')) {
+                        if (confirm('Tem certeza que deseja excluir esta avaliação?')) {
+                            result = await fetchData(`/api/admin-avaliacao-delete?id=${id}`, { method: 'DELETE' });
+                        }
+                    }
+                    if (result) {
+                        showAlert(result.message, 'success');
+                        loadAvaliacoes(); // Recarrega a lista de avaliações
+                    }
+                } catch (error) {
+                    showAlert(error.message, 'danger');
+                }
+            });
+
+            // Anexar ouvintes para a navegação
             if (orcamentosTbody) document.getElementById('nav-orcamentos').addEventListener('click', loadOrcamentos);
             if (clientesTbody) {
                 const searchInput = document.getElementById('search-cliente-input');
@@ -246,21 +292,19 @@ document.addEventListener('DOMContentLoaded', function () {
             
             // Carga inicial
             loadOrcamentos();
-            loadClientes();
-            loadAvaliacoes();
         };
 
         setupLogoutButtons();
         loadAndAttachAdminListeners();
     }
-
-    // Carregamento dinâmico de navbar
+    
+    // Carregamento dinâmico de navbar em páginas secundárias
     const navElement = document.querySelector('nav:not(:has(.container))');
     if (navElement) {
         fetch('index.html').then(res => res.text()).then(text => {
             const doc = new DOMParser().parseFromString(text, 'text/html');
             const sourceNav = doc.querySelector('nav');
-            if (sourceNav) {
+if (sourceNav) {
                 navElement.innerHTML = sourceNav.innerHTML;
                 atualizarNavbar();
             }
