@@ -4,6 +4,18 @@ document.addEventListener('DOMContentLoaded', function () {
     // =========================================================================
     // FUNÇÕES DE AJUDA E CONFIGURAÇÃO
     // =========================================================================
+
+    /**
+     * Converte uma string em texto seguro para ser inserido como HTML, prevenindo ataques XSS.
+     * @param {string} str A string para higienizar.
+     * @returns {string} A string higienizada.
+     */
+    const sanitizeHTML = (str) => {
+        const temp = document.createElement('div');
+        temp.textContent = str;
+        return temp.innerHTML;
+    };
+
     const showAlert = (message, type = 'danger') => {
         // Remove alerts antigos para não empilhar
         document.querySelectorAll('.alert').forEach(a => a.remove());
@@ -90,9 +102,9 @@ document.addEventListener('DOMContentLoaded', function () {
                         <div class="carousel-item ${index === 0 ? 'active' : ''}">
                             <div class="row justify-content-center">
                                 <div class="col-lg-8 text-center">
-                                    <p class="lead">"${review.text}"</p>
+                                    <p class="lead">"${sanitizeHTML(review.text)}"</p>
                                     <div class="my-3">${starsHtml}</div>
-                                    <p class="fw-bold mb-0">${review.name}</p>
+                                    <p class="fw-bold mb-0">${sanitizeHTML(review.name)}</p>
                                 </div>
                             </div>
                         </div>`;
@@ -370,8 +382,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     const row = document.createElement('tr');
                     const statusBadge = a.status === 'Aprovada' ? 'bg-success' : a.status === 'Rejeitada' ? 'bg-danger' : 'bg-warning text-dark';
                     row.innerHTML = `
-                        <td>${a.name}</td>
-                        <td><div class="truncate-text" title="${a.text}">${a.text}</div></td>
+                        <td>${sanitizeHTML(a.name)}</td>
+                        <td><div class="truncate-text" title="${sanitizeHTML(a.text)}">${sanitizeHTML(a.text)}</div></td>
                         <td><span class="badge ${statusBadge}">${a.status}</span></td>
                         <td>
                             ${a.status === 'Pendente' ? `<button class="btn btn-sm btn-success approve-review" title="Aprovar" data-id="${a.id}"><i class="bi bi-check-lg"></i></button> <button class="btn btn-sm btn-warning reject-review" title="Rejeitar" data-id="${a.id}"><i class="bi bi-x-lg"></i></button>` : ''}
