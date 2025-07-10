@@ -449,6 +449,11 @@ document.addEventListener('DOMContentLoaded', function () {
                         result = await fetchData(`/api/admin-orcamento-delete?id=${id}`, { method: 'DELETE' });
                     }
                 }
+                    else if (button.classList.contains('delete-cliente')) {
+                    if (confirm('Tem certeza que deseja excluir este cliente? Esta ação não pode ser desfeita.')) {
+                        result = await fetchData(`/api/admin-cliente-delete?id=${id}`, { method: 'DELETE' });
+                    }
+                }
 
                 if (result) {
                     showAlert(result.message, 'success');
